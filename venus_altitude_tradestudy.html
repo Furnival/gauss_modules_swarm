@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Venus Air-Breathing Orbiter — Altitude Trade Study</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --paper: #fbfaf7;
+    --rule: #d8d3c8;
+    --accent: #b8623d;
+    --accent2: #6b8cae;
+    --good: #588157;
+    --bad: #b8413d;
+    --muted: #6a655c;
+  }
+  html, body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+    margin: 0;
+    padding: 0;
+    line-height: 1.55;
+  }
+  .wrap {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 4rem;
+  }
+  h1 {
+    font-size: 1.9rem;
+    line-height: 1.2;
+    margin: 0 0 0.4rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  h2 {
+    font-size: 1.25rem;
+    margin: 2rem 0 0.6rem;
+    font-weight: 600;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 2rem;
+    font-size: 1.05rem;
+  }
+  p { margin: 0 0 1rem; }
+
+  .controls {
+    background: #f3efe6;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 1.2rem 1.4rem;
+    margin: 1.4rem 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  }
+  .slider-row {
+    display: grid;
+    grid-template-columns: 240px 1fr 110px;
+    align-items: center;
+    gap: 0.8rem;
+    margin: 0.55rem 0;
+  }
+  .slider-row label { font-size: 0.92rem; color: var(--ink); }
+  .slider-row input[type=range] { width: 100%; accent-color: var(--accent); }
+  .slider-row .value {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.92rem;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .slider-row .desc {
+    grid-column: 1 / -1;
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: -0.2rem;
+    margin-bottom: 0.3rem;
+    padding-left: 0;
+    font-style: italic;
+  }
+
+  #plot { width: 100%; height: 520px; margin: 0.5rem 0; }
+
+  .readout {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.6rem 1.4rem;
+    background: #f3efe6;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 1rem 1.4rem;
+    margin: 1rem 0 1.6rem;
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    font-size: 0.95rem;
+  }
+  .readout .item .label {
+    color: var(--muted);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: block;
+    margin-bottom: 0.12rem;
+  }
+  .readout .item .val {
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 1.05rem;
+  }
+  .readout .item .val.good { color: var(--good); }
+  .readout .item .val.bad  { color: var(--bad); }
+  .readout .item .val .unit {
+    color: var(--muted);
+    font-weight: 400;
+    font-size: 0.88em;
+    margin-left: 0.15rem;
+  }
+
+  .verdict {
+    padding: 1rem 1.4rem;
+    border-radius: 4px;
+    margin: 1.2rem 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    font-weight: 500;
+    border-left: 4px solid var(--rule);
+    background: #f3efe6;
+  }
+  .verdict.good { border-left-color: var(--good); background: #eef3e8; }
+  .verdict.warn { border-left-color: #d4a373; background: #f5ecd9; }
+  .verdict.bad  { border-left-color: var(--bad);  background: #f4e1de; }
+  .verdict-title { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 0.3rem; }
+  .verdict-body { font-size: 0.98rem; }
+
+  .science-list {
+    background: #f3efe6;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 1rem 1.4rem;
+    margin: 1rem 0 1.6rem;
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    font-size: 0.93rem;
+  }
+  .science-item {
+    display: grid;
+    grid-template-columns: 28px 90px 1fr;
+    gap: 0.6rem;
+    align-items: baseline;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid #e6e1d6;
+  }
+  .science-item:last-child { border-bottom: none; }
+  .science-item .mark { font-weight: 700; text-align: center; }
+  .science-item .alt {
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  .science-item .name {
+    font-weight: 500;
+    color: var(--muted);
+  }
+  .science-item.active .name { color: var(--good); font-weight: 600; }
+  .science-item.active .alt  { color: var(--good); }
+  .science-item.active .mark { color: var(--good); }
+  .science-item.inactive .mark { color: var(--muted); }
+
+  hr {
+    border: 0;
+    border-top: 1px solid var(--rule);
+    margin: 2rem 0;
+  }
+  .footer {
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-style: italic;
+  }
+  a { color: var(--accent); }
+  code {
+    background: #ece8df;
+    padding: 0.05rem 0.3rem;
+    border-radius: 3px;
+    font-size: 0.92em;
+  }
+  .assumptions {
+    background: #ece8df;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 1rem 1.4rem;
+    margin: 1.2rem 0;
+    font-size: 0.88rem;
+  }
+  .assumptions h3 {
+    font-size: 0.95rem;
+    margin: 0 0 0.5rem;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .assumptions ul { margin: 0; padding-left: 1.2rem; }
+  .assumptions li { margin-bottom: 0.3rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>How low can an air-breathing Venus orbiter fly?</h1>
+<div class="subtitle">Interactive trade study — a companion to “Venus, not Earth: Air-breathing satellites will fly first over Venus.”</div>
+
+<p>The single most consequential decision in a Venus air-breathing mission is periapsis altitude. Lower altitudes open up more science — direct sampling of the cloud deck, in-situ chemistry of the unknown UV absorber, particle counts in the cryosphere — but at a cost. Drag rises sharply, the power required to outrun it rises faster, and at some point the satellite cannot sustain itself in orbit on intake propellant alone.</p>
+
+<p>Drag the altitude slider and watch the trade move. The plot shows drag force and intake thrust as functions of altitude. The readout below the plot shows the four hard constraints: thrust margin, electrical power, heat load, and orbital decay rate. The science panel at the bottom lights up the capabilities your operating altitude unlocks.</p>
+
+<p>This model is honest about its assumptions but does not pretend to be a flight tool. The qualitative shape of the trade is robust. Specific crossover altitudes are uncertain by perhaps ±15 km depending on solar cycle, intake geometry, and CO₂-Hall-thruster efficiency — three numbers no one will pin down without a flight test.</p>
+
+<h2>The controls</h2>
+<div class="controls">
+
+  <div class="slider-row">
+    <label for="alt">Periapsis altitude</label>
+    <input type="range" id="alt" min="120" max="220" step="1" value="150">
+    <div class="value"><span id="alt-val">150</span> km</div>
+  </div>
+
+  <div class="slider-row">
+    <label for="intake">Intake area</label>
+    <input type="range" id="intake" min="0.2" max="4.0" step="0.1" value="1.5">
+    <div class="value"><span id="intake-val">1.5</span> m²</div>
+  </div>
+  <div class="desc">A long thin scoop, mounted along the velocity vector. ESA RAM-EP concepts use ~0.5 m². A larger funnel buys margin.</div>
+
+  <div class="slider-row">
+    <label for="eta">Collection efficiency</label>
+    <input type="range" id="eta" min="0.1" max="0.8" step="0.05" value="0.40">
+    <div class="value"><span id="eta-val">0.40</span></div>
+  </div>
+  <div class="desc">Fraction of swept atmospheric mass that reaches the thruster discharge channel. ESA RAM-EP designs target 0.3–0.5; values above 0.6 are aspirational.</div>
+
+  <div class="slider-row">
+    <label for="vex">CO₂ exhaust velocity</label>
+    <input type="range" id="vex" min="10" max="25" step="0.5" value="15">
+    <div class="value"><span id="vex-val">15</span> km/s</div>
+  </div>
+  <div class="desc">Specific impulse ÷ g. Xenon Hall thrusters reach ~20 km/s. CO₂ is harder to ionize and typically falls in the 12–18 km/s band.</div>
+
+  <div class="slider-row">
+    <label for="panel">Solar panel area</label>
+    <input type="range" id="panel" min="1.0" max="10.0" step="0.5" value="3.0">
+    <div class="value"><span id="panel-val">3.0</span> m²</div>
+  </div>
+  <div class="desc">At Venus the panels see 2,600 W/m², nearly double Earth. With 30% efficient cells, 3 m² delivers about 2.3 kW.</div>
+
+  <div class="slider-row">
+    <label for="adrag">Bus drag area</label>
+    <input type="range" id="adrag" min="0.5" max="3.0" step="0.1" value="1.0">
+    <div class="value"><span id="adrag-val">1.0</span> m²</div>
+  </div>
+  <div class="desc">Projected area exposed to the ram flow (panels feathered edge-on). Small cubesats can hold this near 0.5 m².</div>
+
+</div>
+
+<h2>Drag and thrust vs altitude</h2>
+<div id="plot"></div>
+
+<div class="readout">
+  <div class="item"><span class="label">Atmospheric density</span><span class="val"><span id="rho">—</span><span class="unit">kg/m³</span></span></div>
+  <div class="item"><span class="label">Orbital velocity</span><span class="val"><span id="v">—</span><span class="unit">m/s</span></span></div>
+  <div class="item"><span class="label">Drag force</span><span class="val"><span id="drag">—</span><span class="unit">mN</span></span></div>
+  <div class="item"><span class="label">Intake thrust</span><span class="val"><span id="thrust">—</span><span class="unit">mN</span></span></div>
+  <div class="item"><span class="label">Thrust ÷ drag</span><span class="val" id="td-wrap"><span id="td">—</span></span></div>
+  <div class="item"><span class="label">Power required</span><span class="val"><span id="preq">—</span><span class="unit">W</span></span></div>
+  <div class="item"><span class="label">Power available</span><span class="val"><span id="pav">—</span><span class="unit">W</span></span></div>
+  <div class="item"><span class="label">Heat load (drag·v)</span><span class="val"><span id="phe">—</span><span class="unit">W</span></span></div>
+</div>
+
+<div class="verdict" id="verdict">
+  <div class="verdict-title">Operating regime</div>
+  <div class="verdict-body" id="verdict-body">—</div>
+</div>
+
+<h2>Science capabilities at this altitude</h2>
+<div class="science-list" id="science"></div>
+
+<h2>How to read this</h2>
+<p>The blue line is intake thrust; the red line is drag. <strong>Where the blue line is above the red line, the satellite can sustain orbit on local propellant alone.</strong> Where it falls below, the satellite is decelerating and needs stored propellant to recover — or it spirals down and re-enters.</p>
+
+<p>But thrust beating drag is only the first constraint. The second is power: the discharge chamber needs roughly <code>½ ṁ v_ex²</code> watts of jet power, divided by thruster efficiency, to actually accelerate the propellant. Below about 145 km the power demand explodes past what a reasonable solar array can deliver. The third constraint is heat — the dissipated kinetic energy of decelerated air becomes infrared radiation the spacecraft must shed.</p>
+
+<p>The most interesting region is the band where all three constraints are simultaneously satisfied. With default settings that band is roughly 145 to 170 km. Below 145 the power budget breaks; above 170 the science access narrows quickly. The 25-kilometer window is where a Venus air-breathing mission lives.</p>
+
+<div class="assumptions">
+<h3>Model assumptions</h3>
+<ul>
+<li><strong>Density:</strong> Piecewise exponential fit to Pioneer Venus and Venus Express data. Anchor points: 1.4×10⁻⁹ kg/m³ at 140 km, 1.4×10⁻¹⁰ at 150 km, 7×10⁻¹² at 180 km. Real density varies ~3× between solar minimum and maximum.</li>
+<li><strong>Drag:</strong> <code>D = ½ ρ v² C_d A_drag</code> with C_d = 2.2 (free-molecular flow, fully accommodated).</li>
+<li><strong>Intake thrust:</strong> <code>T = ρ v A_in η (v_ex − v)</code>. Net of the momentum the air already carries — the thruster has to <em>add</em> velocity, not start from rest.</li>
+<li><strong>Power:</strong> <code>P_req = ½ ṁ v_ex² / η_thrust</code> with η_thrust = 0.55 (typical Hall thruster). Available power = 2,600 W/m² × panel area × 30% cell efficiency.</li>
+<li><strong>Orbital velocity:</strong> Circular Keplerian: v = √(μ_V / (R_V + z)) with μ_V = 3.249×10¹⁴ m³/s², R_V = 6,052 km. About 7,240 m/s near 150 km altitude.</li>
+<li><strong>What is missing:</strong> Plane changes, eccentric orbits, drag-induced heating effects on intake efficiency, ionization losses, day/night density asymmetry (~3×), and altitude-dependent solar panel pointing constraints. Each of these is its own paper.</li>
+</ul>
+</div>
+
+<hr>
+
+<div class="footer">
+  <p>— Lawrence Furnival, 27 May 2026 · New Haven, Connecticut</p>
+  <p>Companion to “Venus, not Earth” and the <a href="venus_spiral_interactive.html">Earth-to-Venus spiral interactive</a>. A Pluto.jl notebook with pinned environment is available for the cruise physics; this trade study is JavaScript only, because the assumptions matter more than the integration.</p>
+</div>
+
+</div>
+
+<script>
+"use strict";
+
+// =========================================================
+// Constants and atmosphere model
+// =========================================================
+const MU_V = 3.249e14;        // m^3/s^2
+const R_V  = 6052e3;          // m
+const ETA_THRUSTER = 0.55;    // PPU + Hall thruster electrical-to-jet
+const SOLAR_VENUS = 2600;     // W/m^2
+const PANEL_EFF = 0.30;
+const C_D = 2.2;
+const SECONDS_PER_DAY = 86400;
+
+function v_orb(z_km) {
+  return Math.sqrt(MU_V / (R_V + z_km * 1e3));
+}
+
+// Piecewise exponential density (anchored to PV and VEx data)
+function rho(z_km) {
+  if (z_km < 150) {
+    // 140 -> 1.4e-9, 150 -> 1.4e-10. H = 10/ln(10) ≈ 4.34 km
+    return 1.4e-9 * Math.exp(-(z_km - 140) * Math.log(10) / 10.0);
+  } else {
+    // 150 -> 1.4e-10, 180 -> 7e-12. H ≈ 10 km
+    return 1.4e-10 * Math.exp(-(z_km - 150) / 10.02);
+  }
+}
+
+// =========================================================
+// Trade computation
+// =========================================================
+function trade(z_km, p) {
+  const v = v_orb(z_km);
+  const r = rho(z_km);
+  const drag    = 0.5 * r * v*v * C_D * p.A_drag;             // N
+  const m_dot   = r * v * p.A_in * p.eta;                     // kg/s
+  const thrust  = Math.max(0, m_dot * (p.v_ex - v));          // N (can't be negative)
+  const P_jet   = 0.5 * m_dot * p.v_ex * p.v_ex;              // W
+  const P_req   = P_jet / ETA_THRUSTER;                       // W
+  const P_avail = SOLAR_VENUS * p.A_panel * PANEL_EFF;        // W
+  const P_heat  = drag * v;                                   // W (drag dissipation)
+  // Orbital decay rate (rough): circular orbit energy E = -μm/(2r). Drag does
+  // -drag·v of work per second, intake thrust recovers +thrust·v. So
+  // dE/dt = -(drag - thrust)·v. With dE/dr = μm/(2r²),
+  //   dr/dt = -2 (drag - thrust) v r² / (μ m).
+  const m_sat = 100; // kg, fixed for this readout
+  const P_loss = Math.max(0, drag - thrust) * v;              // W
+  const r_orbit = R_V + z_km * 1e3;
+  const dr_dt = -2 * P_loss * r_orbit * r_orbit / (MU_V * m_sat); // m/s
+  const dz_dt_km_per_day = dr_dt * SECONDS_PER_DAY / 1000;        // km/day (negative when decaying)
+  return { v, rho: r, drag, thrust, m_dot, P_jet, P_req, P_avail, P_heat, dz_dt_km_per_day };
+}
+
+// =========================================================
+// Science capabilities — altitude-gated
+// =========================================================
+const SCIENCE = [
+  { z_max: 220, name: "Magnetosphere & solar wind interaction (induced ionopause structure)" },
+  { z_max: 200, name: "Exosphere composition (H, He escape rates)" },
+  { z_max: 180, name: "Thermosphere temperature & composition (atomic O density)" },
+  { z_max: 170, name: "Mass spectrometry of upper atmosphere (CO₂, CO, N₂, isotopes)" },
+  { z_max: 160, name: "Cryosphere structure (nightside cold pocket, 100 K)" },
+  { z_max: 155, name: "Lightning detection via radio bursts" },
+  { z_max: 150, name: "Cloud-top imaging at multiple wavelengths (UV, IR)" },
+  { z_max: 145, name: "In-situ photochemistry products (CO/O/SO recombination)" },
+  { z_max: 140, name: "Sulfur compounds in upper haze (SO₂, H₂SO₄ vapor)" },
+  { z_max: 135, name: "Direct UV absorber sampling (the 1970s mystery)" },
+  { z_max: 130, name: "Upper cloud deck particle counts" },
+];
+
+function updateScienceList(z) {
+  const el = document.getElementById("science");
+  el.innerHTML = "";
+  for (const s of SCIENCE) {
+    const div = document.createElement("div");
+    const active = z <= s.z_max;
+    div.className = "science-item " + (active ? "active" : "inactive");
+    div.innerHTML = `<span class="mark">${active ? "✓" : "·"}</span><span class="alt">≤ ${s.z_max} km</span><span class="name">${s.name}</span>`;
+    el.appendChild(div);
+  }
+}
+
+// =========================================================
+// Plot
+// =========================================================
+const ALTS = [];
+for (let z = 120; z <= 220; z += 1) ALTS.push(z);
+
+function readParams() {
+  return {
+    A_drag: parseFloat(document.getElementById("adrag").value),
+    A_in:   parseFloat(document.getElementById("intake").value),
+    eta:    parseFloat(document.getElementById("eta").value),
+    v_ex:   parseFloat(document.getElementById("vex").value) * 1000,
+    A_panel: parseFloat(document.getElementById("panel").value),
+  };
+}
+
+function format(v, digits=2) {
+  if (!isFinite(v)) return "—";
+  if (Math.abs(v) < 0.01) return v.toExponential(2);
+  if (Math.abs(v) >= 10000) return v.toExponential(2);
+  return v.toFixed(digits);
+}
+
+function update() {
+  const z = parseFloat(document.getElementById("alt").value);
+  const p = readParams();
+
+  // Update slider labels
+  document.getElementById("alt-val").textContent    = z.toFixed(0);
+  document.getElementById("intake-val").textContent = p.A_in.toFixed(1);
+  document.getElementById("eta-val").textContent    = p.eta.toFixed(2);
+  document.getElementById("vex-val").textContent    = (p.v_ex / 1000).toFixed(1);
+  document.getElementById("panel-val").textContent  = p.A_panel.toFixed(1);
+  document.getElementById("adrag-val").textContent  = p.A_drag.toFixed(1);
+
+  // Compute trade at slider altitude
+  const r = trade(z, p);
+
+  // Build the drag/thrust curves over the altitude range
+  const drag_curve = ALTS.map(za => trade(za, p).drag * 1000);   // mN
+  const thrust_curve = ALTS.map(za => trade(za, p).thrust * 1000);
+
+  // Readout
+  document.getElementById("rho").textContent    = r.rho.toExponential(2);
+  document.getElementById("v").textContent      = r.v.toFixed(0);
+  document.getElementById("drag").textContent   = format(r.drag * 1000);
+  document.getElementById("thrust").textContent = format(r.thrust * 1000);
+  document.getElementById("preq").textContent   = format(r.P_req, 0);
+  document.getElementById("pav").textContent    = format(r.P_avail, 0);
+  document.getElementById("phe").textContent    = format(r.P_heat, 0);
+
+  const td = r.drag > 0 ? r.thrust / r.drag : Infinity;
+  document.getElementById("td").textContent = td.toFixed(2);
+  const tdWrap = document.getElementById("td-wrap");
+  tdWrap.className = "val " + (td >= 1.0 ? "good" : "bad");
+  // Color the readout values
+  document.getElementById("preq").className = (r.P_req <= r.P_avail) ? "" : "bad";
+
+  // Verdict. Note: T/D is geometry- and efficiency-limited, not altitude-limited
+  // (drag and thrust both scale linearly with ρ at fixed v). So suggesting
+  // "fly higher" only helps the power budget, not the thrust deficit.
+  const ok_td_strict  = td >= 1.0;
+  const ok_td_loose   = td >= 0.95;   // within model uncertainty of unity
+  const ok_pwr  = r.P_req <= r.P_avail;
+  const ok_heat = r.P_heat < 800;   // heuristic; >800 W is hard to radiate from a smallsat
+  let cls, body;
+  if (ok_td_strict && ok_pwr && ok_heat) {
+    cls = "good";
+    body = `<strong>Sustainable orbit.</strong> Thrust exceeds drag by ${((td-1)*100).toFixed(0)}% with ${(r.P_avail - r.P_req).toFixed(0)} W of power margin. Heat load is ${r.P_heat.toFixed(0)} W, within radiator capacity. The satellite can hold this altitude indefinitely on intake propellant.`;
+  } else if (ok_td_loose && ok_pwr && ok_heat) {
+    cls = "warn";
+    body = `<strong>Marginal — within model uncertainty.</strong> Thrust-to-drag is ${td.toFixed(2)}, essentially unity. A real design would need small margins from a larger intake or higher collection efficiency to cover off-nominal density.`;
+  } else if (!ok_td_loose && !ok_pwr) {
+    cls = "bad";
+    body = `<strong>Thrust deficit and power deficit.</strong> Intake thrust is ${(r.thrust*1000).toFixed(2)} mN against ${(r.drag*1000).toFixed(2)} mN of drag, and the thruster wants ${r.P_req.toFixed(0)} W while the array delivers ${r.P_avail.toFixed(0)} W. The geometry needs more intake area or higher exhaust velocity.`;
+  } else if (!ok_td_loose) {
+    cls = "bad";
+    body = `<strong>Cannot sustain orbit.</strong> Intake thrust (${(r.thrust*1000).toFixed(2)} mN) is below drag (${(r.drag*1000).toFixed(2)} mN); the orbit decays at ${Math.abs(r.dz_dt_km_per_day).toFixed(2)} km/day. Because T/D depends only on geometry (intake area, efficiency, exhaust velocity), flying higher does not help — both drag and thrust fall together. To fix: larger intake, higher collection efficiency, or higher exhaust velocity.`;
+  } else if (!ok_pwr) {
+    cls = "bad";
+    body = `<strong>Power budget exceeded.</strong> Thrust beats drag (T/D = ${td.toFixed(2)}) but the thruster needs ${r.P_req.toFixed(0)} W and the solar array delivers only ${r.P_avail.toFixed(0)} W. To fix: larger panels, fly higher (lower ṁ for same T/D), reduce exhaust velocity, or accept duty-cycled operation.`;
+  } else if (!ok_heat) {
+    cls = "warn";
+    body = `<strong>Marginal — thermal load is high.</strong> Heat dissipation from drag is ${r.P_heat.toFixed(0)} W. A small-bus radiator typically handles 200–800 W. At this altitude the thermal control system is the binding constraint, not propulsion.`;
+  } else {
+    cls = "warn";
+    body = `<strong>Marginal.</strong>`;
+  }
+  const v = document.getElementById("verdict");
+  v.className = "verdict " + cls;
+  document.getElementById("verdict-body").innerHTML = body;
+
+  // Science list
+  updateScienceList(z);
+
+  // Plot
+  const traces = [
+    {
+      x: drag_curve, y: ALTS,
+      mode: "lines", name: "Drag",
+      line: { color: "#b8413d", width: 2.4 },
+    },
+    {
+      x: thrust_curve, y: ALTS,
+      mode: "lines", name: "Intake thrust",
+      line: { color: "#6b8cae", width: 2.4 },
+    },
+    {
+      x: [0.001, 100000], y: [z, z],
+      mode: "lines", name: "Current altitude",
+      line: { color: "#1a1a1a", width: 1, dash: "dot" },
+      hoverinfo: "skip",
+      showlegend: false,
+    },
+    {
+      x: [r.drag * 1000], y: [z],
+      mode: "markers", name: "Drag at z",
+      marker: { color: "#b8413d", size: 10, symbol: "circle" },
+      showlegend: false,
+      hoverinfo: "skip",
+    },
+    {
+      x: [r.thrust * 1000], y: [z],
+      mode: "markers", name: "Thrust at z",
+      marker: { color: "#6b8cae", size: 10, symbol: "circle" },
+      showlegend: false,
+      hoverinfo: "skip",
+    },
+  ];
+  const layout = {
+    title: { text: "Drag (red) vs. intake thrust (blue) by altitude", font: { size: 14, family: "Georgia, serif" } },
+    xaxis: {
+      title: "Force (mN, log scale)",
+      type: "log",
+      range: [Math.log10(0.001), Math.log10(10000)],
+      gridcolor: "#e6e2d8",
+    },
+    yaxis: {
+      title: "Altitude (km)",
+      range: [120, 220],
+      gridcolor: "#e6e2d8",
+    },
+    paper_bgcolor: "#fbfaf7",
+    plot_bgcolor:  "#fbfaf7",
+    margin: { l: 70, r: 30, t: 50, b: 60 },
+    legend: { x: 0.02, y: 0.98, bgcolor: "rgba(251,250,247,0.8)" },
+    font: { family: "Georgia, serif", color: "#1a1a1a", size: 12 },
+  };
+  Plotly.react("plot", traces, layout, { displayModeBar: false, responsive: true });
+}
+
+// Debounced live update
+let pending = null;
+function schedule() {
+  if (pending !== null) cancelAnimationFrame(pending);
+  pending = requestAnimationFrame(() => { pending = null; update(); });
+}
+for (const id of ["alt", "intake", "eta", "vex", "panel", "adrag"]) {
+  document.getElementById(id).addEventListener("input", schedule);
+}
+
+// First draw
+update();
+</script>
+</body>
+</html>

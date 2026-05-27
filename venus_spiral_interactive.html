@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Earth-to-Venus Spiral — Interactive</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --paper: #fbfaf7;
+    --rule: #d8d3c8;
+    --accent: #b8623d;
+    --muted: #6a655c;
+  }
+  html, body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+    margin: 0;
+    padding: 0;
+    line-height: 1.55;
+  }
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 4rem;
+  }
+  h1 {
+    font-size: 1.9rem;
+    line-height: 1.2;
+    margin: 0 0 0.4rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 2rem;
+    font-size: 1.05rem;
+  }
+  p { margin: 0 0 1rem; }
+  .controls {
+    background: #f3efe6;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 1.2rem 1.4rem;
+    margin: 1.4rem 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  }
+  .slider-row {
+    display: grid;
+    grid-template-columns: 200px 1fr 90px;
+    align-items: center;
+    gap: 0.8rem;
+    margin: 0.7rem 0;
+  }
+  .slider-row label {
+    font-size: 0.92rem;
+    color: var(--ink);
+  }
+  .slider-row input[type=range] {
+    width: 100%;
+    accent-color: var(--accent);
+  }
+  .slider-row .value {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.92rem;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  #plot {
+    width: 100%;
+    height: 480px;
+    margin: 0.5rem 0 1rem;
+  }
+  .readout {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.6rem 1.4rem;
+    background: #f3efe6;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 1rem 1.4rem;
+    margin: 1rem 0 1.6rem;
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    font-size: 0.95rem;
+  }
+  .readout .item .label {
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: block;
+    margin-bottom: 0.15rem;
+  }
+  .readout .item .val {
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 1.05rem;
+  }
+  .readout .item .val .unit {
+    color: var(--muted);
+    font-weight: 400;
+    font-size: 0.9em;
+    margin-left: 0.15rem;
+  }
+  hr {
+    border: 0;
+    border-top: 1px solid var(--rule);
+    margin: 2rem 0;
+  }
+  .footer {
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-style: italic;
+  }
+  a { color: var(--accent); }
+  code {
+    background: #ece8df;
+    padding: 0.05rem 0.3rem;
+    border-radius: 3px;
+    font-size: 0.92em;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>The Earth-to-Venus Spiral</h1>
+<div class="subtitle">Interactive companion to “Venus, not Earth: Air-breathing satellites will fly first over Venus.”</div>
+
+<p>Drag the thrust slider below. Watch the cruise time and the number of revolutions change. The trade you are looking at is the entire economic case for low-thrust interplanetary missions: more thrust shortens the cruise but demands a bigger spacecraft and more propellant; less thrust means months of patience, but a tenfold improvement in delivered mass to Venus orbit.</p>
+
+<p>The default position (0.30&nbsp;mm/s² applied to a 100&nbsp;kg spacecraft) corresponds to a single Rocket Lab Gauss-class Hall thruster — about 30&nbsp;millinewtons of thrust, or roughly the weight of six paperclips. The slider extends down to a hypothetical micro-thruster and up to the larger Psyche-class units flying today.</p>
+
+<div class="controls">
+  <div class="slider-row">
+    <label for="thrust">Thrust acceleration</label>
+    <input type="range" id="thrust" min="0.03" max="1.0" step="0.01" value="0.30">
+    <div class="value"><span id="thrust-val">0.30</span> mm/s²</div>
+  </div>
+  <div class="slider-row">
+    <label for="mass">Spacecraft mass</label>
+    <input type="range" id="mass" min="50" max="500" step="10" value="100">
+    <div class="value"><span id="mass-val">100</span> kg</div>
+  </div>
+</div>
+
+<div id="plot"></div>
+
+<div class="readout">
+  <div class="item"><span class="label">Cruise time</span><span class="val"><span id="cruise-days">—</span><span class="unit">days</span></span></div>
+  <div class="item"><span class="label">…in months</span><span class="val"><span id="cruise-months">—</span><span class="unit">mo</span></span></div>
+  <div class="item"><span class="label">Revolutions</span><span class="val"><span id="revs">—</span></span></div>
+  <div class="item"><span class="label">Edelbaum estimate</span><span class="val"><span id="edel">—</span><span class="unit">days</span></span></div>
+  <div class="item"><span class="label">Thrust on the bus</span><span class="val"><span id="thrust-mn">—</span><span class="unit">mN</span></span></div>
+  <div class="item"><span class="label">Δv (Edelbaum)</span><span class="val"><span id="dv">—</span><span class="unit">km/s</span></span></div>
+</div>
+
+<p>Notice what changes as you move the slider. At very low thrust (around 0.05&nbsp;mm/s²), the spacecraft makes four or more full revolutions before falling far enough to reach Venus, and the cruise stretches past three years. At the default Gauss-class thrust (0.30&nbsp;mm/s² on a 100&nbsp;kg bus, about 30&nbsp;mN), you get a cruise of roughly five to six months and about half a revolution. This is the working point the essay describes. At higher thrust (above 0.6&nbsp;mm/s²), the spiral collapses toward something resembling a Hohmann transfer arc.</p>
+
+<p>The whole argument for low-thrust to Venus lives in that middle range. The spacecraft is small enough that the propellant fraction stays manageable, and the cruise is short enough that the operations team and the science team are still the same humans by the time the data starts coming back.</p>
+
+<hr>
+
+<p><strong>On the model.</strong> This is a planar, two-body, constant-thrust integration with the thrust vector aligned opposite to the velocity, which is the correct sense to spiral inward from Earth's orbit to Venus's. It does not include the orbital plane change for Venus's 3.4° inclination, the Earth-escape spiral, or the Venus-capture spiral; the heliocentric leg alone is what the slider controls. Real mission tools (GMAT, Copernicus) include all of these effects. None of them changes the qualitative shape of the spiral or the order-of-magnitude cruise time.</p>
+
+<p>The Edelbaum approximation in the readout matches the numerical integration to within a few percent for low thrust (below ~0.15&nbsp;mm/s²) and diverges progressively as thrust rises, because the spiral stops behaving like a slowly-changing circular orbit and starts behaving like a directed arc. This is the expected breakdown of the many-revolution assumption.</p>
+
+<hr>
+
+<div class="footer">
+  <p>— Lawrence Furnival, 27 May 2026 · New Haven, Connecticut</p>
+  <p>The canonical source is a Pluto.jl notebook with a pinned environment (Project.toml, Manifest.toml) for exact reproducibility. This page is the JavaScript port for browser readers; the Julia notebook is for verification.</p>
+</div>
+
+</div>
+
+<script>
+"use strict";
+
+// ============================================================
+// Constants (SI units)
+// ============================================================
+const MU_SUN  = 1.32712440018e20;        // m^3/s^2
+const AU      = 1.495978707e11;          // m
+const R_EARTH = 1.000 * AU;
+const R_VENUS = 0.723 * AU;
+const V_EARTH = Math.sqrt(MU_SUN / R_EARTH);
+const V_VENUS = Math.sqrt(MU_SUN / R_VENUS);
+const DV_EDELBAUM = Math.abs(V_EARTH - V_VENUS);  // m/s
+
+// ============================================================
+// Equations of motion: planar 2-body + tangential thrust
+//   state u = [x, y, vx, vy]
+//   a_thrust applied opposite to velocity (decelerate => inward spiral)
+// ============================================================
+function eom(u, a_thrust) {
+  const [x, y, vx, vy] = u;
+  const r = Math.hypot(x, y);
+  const v = Math.hypot(vx, vy);
+  const r3 = r * r * r;
+  const ax_g = -MU_SUN * x / r3;
+  const ay_g = -MU_SUN * y / r3;
+  const ax_t = -a_thrust * vx / v;
+  const ay_t = -a_thrust * vy / v;
+  return [vx, vy, ax_g + ax_t, ay_g + ay_t];
+}
+
+function rk4Step(u, dt, a_thrust) {
+  const k1 = eom(u, a_thrust);
+  const u2 = u.map((ui, i) => ui + 0.5 * dt * k1[i]);
+  const k2 = eom(u2, a_thrust);
+  const u3 = u.map((ui, i) => ui + 0.5 * dt * k2[i]);
+  const k3 = eom(u3, a_thrust);
+  const u4 = u.map((ui, i) => ui + dt * k3[i]);
+  const k4 = eom(u4, a_thrust);
+  return u.map((ui, i) =>
+    ui + (dt / 6.0) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i])
+  );
+}
+
+// Integrate until r == R_VENUS or t_max reached.
+// Linearly interpolate the crossing step so the endpoint is exactly at Venus orbit.
+function integrate(a_thrust, t_max, dt) {
+  let u = [R_EARTH, 0.0, 0.0, V_EARTH];
+  const xs = [u[0] / AU];
+  const ys = [u[1] / AU];
+  const ts = [0.0];
+  let t = 0.0;
+  let prev_r = Math.hypot(u[0], u[1]);
+  while (t < t_max) {
+    const u_next = rk4Step(u, dt, a_thrust);
+    const r_next = Math.hypot(u_next[0], u_next[1]);
+    if (r_next <= R_VENUS) {
+      // Linear interpolation factor for the crossing
+      const frac = (prev_r - R_VENUS) / (prev_r - r_next);
+      const u_end = u.map((ui, i) => ui + frac * (u_next[i] - ui));
+      const t_end = t + frac * dt;
+      xs.push(u_end[0] / AU);
+      ys.push(u_end[1] / AU);
+      ts.push(t_end);
+      return { xs, ys, ts, u_final: u_end, t_final: t_end, terminated: true };
+    }
+    u = u_next;
+    t += dt;
+    prev_r = r_next;
+    xs.push(u[0] / AU);
+    ys.push(u[1] / AU);
+    ts.push(t);
+  }
+  return { xs, ys, ts, u_final: u, t_final: t, terminated: false };
+}
+
+// Count cumulative angle swept (in revolutions, unsigned)
+function countRevs(xs, ys) {
+  let total = 0.0;
+  for (let i = 1; i < xs.length; i++) {
+    let th1 = Math.atan2(ys[i-1], xs[i-1]);
+    let th2 = Math.atan2(ys[i],   xs[i]);
+    let dth = th2 - th1;
+    if (dth >  Math.PI) dth -= 2 * Math.PI;
+    if (dth < -Math.PI) dth += 2 * Math.PI;
+    total += dth;
+  }
+  return Math.abs(total) / (2 * Math.PI);
+}
+
+// ============================================================
+// Plotting & UI
+// ============================================================
+const SEC_PER_DAY   = 86400.0;
+const SEC_PER_MONTH = 30.44 * SEC_PER_DAY;
+const T_MAX = 5.0 * 365.25 * SEC_PER_DAY;    // 5-year cutoff
+
+// Reference orbits (drawn once as dashed circles)
+function makeCircle(r_au, n = 360) {
+  const xs = [], ys = [];
+  for (let i = 0; i <= n; i++) {
+    const th = (2 * Math.PI * i) / n;
+    xs.push(r_au * Math.cos(th));
+    ys.push(r_au * Math.sin(th));
+  }
+  return { xs, ys };
+}
+const earthOrbit = makeCircle(1.000);
+const venusOrbit = makeCircle(0.723);
+
+function chooseDt(a_thrust) {
+  // Smaller dt at high thrust where the trajectory becomes a sharper arc.
+  // At a=0.03 mm/s^2 the cruise is ~3 years; dt=4h is plenty.
+  // At a=1.0 mm/s^2 the cruise is ~60 days; dt=1h gives ~1500 steps.
+  if (a_thrust > 5e-4) return 1800.0;     // 30 min
+  if (a_thrust > 2e-4) return 3600.0;     // 1 h
+  return 7200.0;                          // 2 h
+}
+
+function runAndPlot() {
+  const a_mm = parseFloat(document.getElementById("thrust").value);
+  const m0   = parseFloat(document.getElementById("mass").value);
+  document.getElementById("thrust-val").textContent = a_mm.toFixed(2);
+  document.getElementById("mass-val").textContent   = m0.toFixed(0);
+
+  const a_thrust = a_mm * 1e-3;     // m/s^2
+  const dt = chooseDt(a_thrust);
+  const { xs, ys, t_final, terminated } = integrate(a_thrust, T_MAX, dt);
+  const revs = countRevs(xs, ys);
+
+  const cruise_days   = t_final / SEC_PER_DAY;
+  const cruise_months = t_final / SEC_PER_MONTH;
+  const edel_days     = (DV_EDELBAUM / a_thrust) / SEC_PER_DAY;
+  const thrust_mN     = a_thrust * m0 * 1000.0;
+  const dv_km         = DV_EDELBAUM / 1000.0;
+
+  document.getElementById("cruise-days").textContent   = cruise_days.toFixed(0);
+  document.getElementById("cruise-months").textContent = cruise_months.toFixed(1);
+  document.getElementById("revs").textContent          = revs.toFixed(2);
+  document.getElementById("edel").textContent          = edel_days.toFixed(0);
+  document.getElementById("thrust-mn").textContent     = thrust_mN.toFixed(1);
+  document.getElementById("dv").textContent            = dv_km.toFixed(2);
+
+  // Annotation if the spacecraft didn't reach Venus inside 5 years
+  let titleTxt = `Spiral trajectory: a = ${a_mm.toFixed(2)} mm/s²`;
+  if (!terminated) titleTxt += "  (did not reach Venus inside 5 years)";
+
+  const traces = [
+    {
+      x: earthOrbit.xs, y: earthOrbit.ys,
+      mode: "lines", name: "Earth orbit",
+      line: { color: "#6b8cae", dash: "dash", width: 1.5 },
+      hoverinfo: "skip",
+    },
+    {
+      x: venusOrbit.xs, y: venusOrbit.ys,
+      mode: "lines", name: "Venus orbit",
+      line: { color: "#b8623d", dash: "dash", width: 1.5 },
+      hoverinfo: "skip",
+    },
+    {
+      x: xs, y: ys,
+      mode: "lines", name: "Spacecraft",
+      line: { color: "#1a1a1a", width: 2.2 },
+      hoverinfo: "skip",
+    },
+    {
+      x: [0], y: [0],
+      mode: "markers", name: "Sun",
+      marker: { color: "#e9c46a", size: 14, line: { color: "#a07a1a", width: 1 } },
+      hoverinfo: "name",
+    },
+    {
+      x: [xs[0]], y: [ys[0]],
+      mode: "markers", name: "Start (Earth)",
+      marker: { color: "#6b8cae", size: 9 },
+      hoverinfo: "name",
+    },
+    {
+      x: [xs[xs.length-1]], y: [ys[ys.length-1]],
+      mode: "markers", name: terminated ? "End (Venus orbit)" : "End (5 yr cutoff)",
+      marker: { color: "#b8623d", size: 9 },
+      hoverinfo: "name",
+    },
+  ];
+
+  const layout = {
+    title: { text: titleTxt, font: { size: 15, family: "Georgia, serif" } },
+    xaxis: {
+      title: "x (AU)", scaleanchor: "y", scaleratio: 1,
+      range: [-1.25, 1.25], zeroline: false,
+      gridcolor: "#e6e2d8",
+    },
+    yaxis: {
+      title: "y (AU)", range: [-1.25, 1.25], zeroline: false,
+      gridcolor: "#e6e2d8",
+    },
+    paper_bgcolor: "#fbfaf7",
+    plot_bgcolor:  "#fbfaf7",
+    margin: { l: 60, r: 30, t: 50, b: 50 },
+    legend: { x: 1.0, y: 0.5, xanchor: "left", bgcolor: "rgba(0,0,0,0)" },
+    font: { family: "Georgia, serif", color: "#1a1a1a", size: 12 },
+  };
+
+  Plotly.react("plot", traces, layout, { displayModeBar: false, responsive: true });
+}
+
+// Debounced live-update on slider drag
+let pending = null;
+function schedule() {
+  if (pending !== null) cancelAnimationFrame(pending);
+  pending = requestAnimationFrame(() => { pending = null; runAndPlot(); });
+}
+
+document.getElementById("thrust").addEventListener("input", schedule);
+document.getElementById("mass").addEventListener("input", schedule);
+
+// First draw
+runAndPlot();
+</script>
+</body>
+</html>
