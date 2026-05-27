@@ -1,6 +1,6 @@
 The second of two. Continued from "Open Letter to Peter Beck."
 
-Venus, not Earth: Air-breathing satellites will fly first over Venus
+**Venus, not Earth:** Air-breathing satellites will fly first over Venus
 The planet with the hellish atmosphere has the best atmosphere as fuel.
 
 A Hall-effect thruster does one thing well. It takes a small amount of inert gas, ionizes it, and accelerates it to about twenty kilometers per second. Give it electricity and propellant and it will run until its nozzle physically erodes. Generally, the catch has been the propellant. Xenon, the first choice, is rare and expensive. It is a byproduct of industrial air separation and priced like a precious metal. Krypton is only a bit better. Argon is cheap but must be stored as a deep cryogen, which wipes out its cost advantage. For any mission longer than a few years, the propellant budget, not the thruster, is the limiting factor.
