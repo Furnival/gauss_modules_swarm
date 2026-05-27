@@ -97,9 +97,10 @@ I suggested to Peter Beck, in the previous open letter, that I thought he owed h
 -- Lawrence Furnival 27 May 2026 @ New Haven, Connecticut
 
 Interactive companions and source code:
-	•	[Earth-to-Venus spiral interactive](https://furnival.github.io/gauss_modules_swarm/venus_spiral_interactive.html) — single-page browser tool. Adjust thrust acceleration and spacecraft mass; watch cruise time, revolution count, and Δv update live.
 
-	•	[Air-breathing altitude trade-off study](https://furnival.github.io/gauss_modules_swarm/venus_altitude_tradestudy.html) — single-page browser tool. Six sliders, a live drag-vs-thrust chart, and a science-by-altitude readout.
+[Earth-to-Venus spiral interactive](https://furnival.github.io/gauss_modules_swarm/venus_spiral_interactive.html) — single-page browser tool. Adjust thrust acceleration and spacecraft mass; watch cruise time, revolution count, and Δv update live.
 
-	•	venus_spiral_notebook.jl (Pluto.jl source) and venus_spiral_notebook.html (static export). The pinned environment (Project.toml, Manifest.toml) is included so the cruise-physics calculations are exactly reproducible.
+[Air-breathing altitude trade-off study](https://furnival.github.io/gauss_modules_swarm/venus_altitude_tradestudy.html) — single-page browser tool. Six sliders, a live drag-vs-thrust chart, and a science-by-altitude readout.
+
+venus_spiral_notebook.jl (Pluto.jl source) and venus_spiral_notebook.html (static export). The pinned environment (Project.toml, Manifest.toml) is included so the cruise-physics calculations are exactly reproducible.
 
