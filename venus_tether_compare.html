@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Venus Sample Return — Tether vs Elliptical Trade Study</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #0e1116;
+    --panel: #161a22;
+    --panel-2: #1c2230;
+    --ink: #e6e9ef;
+    --ink-2: #9aa3b2;
+    --rule: #2a3142;
+    --accent: #d9a05b;
+    --tether: #b58fc4;
+    --ellipse: #6ea8c7;
+    --good: #6fbf73;
+    --warn: #d9b04e;
+    --bad: #d96b6b;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); }
+  body { padding: 28px 32px 60px; max-width: 1280px; margin: 0 auto; }
+  h1 { font-family: var(--serif); font-weight: 500; font-size: 28px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .deck { color: var(--ink-2); font-style: italic; margin-bottom: 22px; font-size: 15px; max-width: 880px; }
+  .layout { display: grid; grid-template-columns: 340px 1fr 1fr; gap: 18px; }
+  @media (max-width: 1100px) { .layout { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 18px; }
+  .panel.tether { border-left: 3px solid var(--tether); }
+  .panel.ellipse { border-left: 3px solid var(--ellipse); }
+  .panel h2 { font-family: var(--serif); font-weight: 500; font-size: 17px; margin: 0 0 12px; letter-spacing: -0.005em; }
+  .panel.tether h2 { color: var(--tether); }
+  .panel.ellipse h2 { color: var(--ellipse); }
+  .ctrl { margin-bottom: 14px; }
+  .ctrl label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink); margin-bottom: 5px; }
+  .ctrl label .v { font-family: var(--mono); color: var(--accent); }
+  .ctrl input[type=range] { width: 100%; accent-color: var(--accent); }
+  .ctrl .hint { font-size: 10.5px; color: var(--ink-2); margin-top: 3px; font-style: italic; line-height: 1.3; }
+  .section-rule { border-top: 1px dashed var(--rule); margin: 14px 0 10px; padding-top: 4px; font-size: 10px; color: var(--ink-2); letter-spacing: 0.08em; text-transform: uppercase; }
+  .verdict { padding: 10px 12px; border-radius: 6px; margin-top: 10px; font-size: 12.5px; line-height: 1.45; }
+  .verdict.good { background: rgba(111,191,115,0.10); border: 1px solid rgba(111,191,115,0.35); }
+  .verdict.warn { background: rgba(217,176,78,0.10); border: 1px solid rgba(217,176,78,0.35); }
+  .verdict.bad { background: rgba(217,107,107,0.10); border: 1px solid rgba(217,107,107,0.35); }
+  .verdict strong { display: block; margin-bottom: 3px; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .verdict.good strong { color: var(--good); }
+  .verdict.warn strong { color: var(--warn); }
+  .verdict.bad strong { color: var(--bad); }
+  .kv { border-bottom: 1px dotted var(--rule); padding: 6px 0; }
+  .kv .k { font-size: 10px; color: var(--ink-2); letter-spacing: 0.04em; text-transform: uppercase; }
+  .kv .v { font-family: var(--mono); font-size: 13.5px; color: var(--ink); margin-top: 2px; }
+  .kv .v.accent { color: var(--accent); }
+  .kv .v.good { color: var(--good); }
+  .kv .v.bad { color: var(--bad); }
+  .winner-banner { padding: 10px 14px; border-radius: 6px; background: var(--panel-2); margin: 16px 0; font-size: 13px; line-height: 1.5; border-left: 3px solid var(--accent); }
+  .winner-banner strong { color: var(--accent); display: block; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 3px; }
+  canvas { width: 100%; height: 260px; display: block; background: radial-gradient(ellipse at center, #131826 0%, #0b0e15 75%); border: 1px solid var(--rule); border-radius: 5px; margin-top: 8px; }
+  .sketch-wrap h3 { font-family: var(--serif); font-size: 13px; font-weight: 500; margin: 12px 0 6px; color: var(--ink-2); display: flex; justify-content: space-between; align-items: baseline; }
+  .sketch-wrap h3 .meta { font-family: var(--mono); font-size: 11px; color: var(--ink-2); font-weight: 400; }
+  .anim-ctrl { display: flex; align-items: center; gap: 10px; margin: 10px 0 4px; font-size: 11px; color: var(--ink-2); }
+  .anim-ctrl button { background: var(--panel-2); color: var(--ink); border: 1px solid var(--rule); border-radius: 4px; padding: 3px 10px; font-size: 11px; font-family: var(--sans); cursor: pointer; }
+  .anim-ctrl button:hover { border-color: var(--accent); color: var(--accent); }
+  .anim-ctrl input[type=range] { flex: 1; max-width: 160px; accent-color: var(--accent); }
+  .anim-ctrl .v { font-family: var(--mono); color: var(--accent); min-width: 36px; }
+  footer { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--rule); color: var(--ink-2); font-size: 12px; line-height: 1.6; font-style: italic; }
+  .scenarios { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .scenarios button { background: var(--panel-2); color: var(--ink); border: 1px solid var(--rule); border-radius: 4px; padding: 4px 8px; font-size: 11px; font-family: var(--sans); cursor: pointer; }
+  .scenarios button:hover { border-color: var(--accent); color: var(--accent); }
+</style>
+</head>
+<body>
+
+<h1>Venus Sample Return — Tether vs Elliptical Trade Study</h1>
+<div class="deck">Two architectures, one set of inputs, side-by-side outputs. The rotating tether dips a small scoop into the atmosphere on each rotation while the bus stays high. The elliptical orbit drags the whole bus through periapsis on each revolution. Drag the sliders. The winner-banner at the bottom tells you which architecture closes — and why.</div>
+
+<div class="layout">
+
+  <div class="panel">
+    <h2>Shared inputs</h2>
+
+    <div class="scenarios">
+      <button data-scn="baseline">Baseline</button>
+      <button data-scn="gentle">Gentle scoop</button>
+      <button data-scn="aggressive">Aggressive</button>
+      <button data-scn="long_tether">Long tether</button>
+    </div>
+
+    <div class="section-rule">Mission</div>
+
+    <div class="ctrl">
+      <label>Campaign duration (months) <span class="v" id="v_t">18</span></label>
+      <input type="range" id="s_t" min="3" max="48" step="1" value="18">
+    </div>
+
+    <div class="ctrl">
+      <label>Scoop intake area (m²) <span class="v" id="v_a">0.30</span></label>
+      <input type="range" id="s_a" min="0.05" max="2.0" step="0.05" value="0.30">
+      <div class="hint">Same scoop on both architectures.</div>
+    </div>
+
+    <div class="ctrl">
+      <label>Sample collection altitude (km) <span class="v" id="v_h">140</span></label>
+      <input type="range" id="s_h" min="100" max="200" step="2" value="140">
+      <div class="hint">Where the scoop encounters dense atmosphere.</div>
+    </div>
+
+    <div class="ctrl">
+      <label>Cluster power (kW) <span class="v" id="v_p">6.0</span></label>
+      <input type="range" id="s_p" min="1.0" max="20.0" step="0.5" value="6.0">
+      <div class="hint">Total Hall-thruster power available.</div>
+    </div>
+
+    <div class="section-rule">Tether-only</div>
+
+    <div class="ctrl">
+      <label>Tether length (km) <span class="v" id="v_l">200</span></label>
+      <input type="range" id="s_l" min="20" max="2000" step="10" value="200">
+      <div class="hint">Bus sits this far above the scoop tip. HASTOL-class skyhooks were studied at 600–4000 km.</div>
+    </div>
+
+    <div class="ctrl">
+      <label>Tether rotation rate (rpm) <span class="v" id="v_w">0.27</span></label>
+      <input type="range" id="s_w" min="0.0" max="3.0" step="0.01" value="0.27">
+      <div class="hint">Tip inertial velocity = v_bus − ωL. For 1.5 km/s tip (the chemistry sweet spot), ωL ≈ 5.6 km/s. <span id="v_rpm_ideal" style="color:var(--accent);font-family:var(--mono)"></span></div>
+    </div>
+
+    <div class="section-rule">Elliptical-only</div>
+
+    <div class="ctrl">
+      <label>Apoapsis altitude (km) <span class="v" id="v_apo">600</span></label>
+      <input type="range" id="s_apo" min="250" max="1500" step="25" value="600">
+      <div class="hint">High end of the elliptical orbit. Periapsis = collection altitude above.</div>
+    </div>
+  </div>
+
+  <!-- Tether panel -->
+  <div class="panel tether">
+    <h2>A. Rotating tether (skyhook)</h2>
+    <div class="kv"><div class="k">Tip velocity through atmosphere</div><div class="v accent" id="tA_vtip">— km/s</div></div>
+    <div class="kv"><div class="k">Tip velocity vs free-flying spacecraft</div><div class="v" id="tA_vratio">—</div></div>
+    <div class="kv"><div class="k">Mass scooped per rotation</div><div class="v" id="tA_per_rot">— g</div></div>
+    <div class="kv"><div class="k">Rotation period</div><div class="v" id="tA_period">— s</div></div>
+    <div class="kv"><div class="k">Total mass collected</div><div class="v accent" id="tA_total">— kg</div></div>
+    <div class="kv"><div class="k">Drag on tip per dip</div><div class="v" id="tA_drag">— N</div></div>
+    <div class="kv"><div class="k">Δv to replace lost energy</div><div class="v" id="tA_dv">— m/s/day</div></div>
+    <div class="kv"><div class="k">Hall thrust required</div><div class="v" id="tA_thrust">— mN</div></div>
+    <div class="kv"><div class="k">Thrust margin</div><div class="v" id="tA_margin">—</div></div>
+    <div class="kv"><div class="k">Tip thermal regime</div><div class="v" id="tA_thermal">—</div></div>
+    <div class="kv"><div class="k">Sample chemistry</div><div class="v" id="tA_chem">—</div></div>
+    <div class="kv"><div class="k">Tether tip g-load</div><div class="v" id="tA_gload">—</div></div>
+
+    <div id="vA" class="verdict">
+      <strong>Tether verdict</strong>
+      <span id="vA_text">—</span>
+    </div>
+
+    <div class="sketch-wrap">
+      <h3>Tether geometry <span class="meta" id="animA_meta">—</span></h3>
+      <canvas id="chartA" width="560" height="260"></canvas>
+    </div>
+  </div>
+
+  <!-- Elliptical panel -->
+  <div class="panel ellipse">
+    <h2>B. Elliptical drag-through</h2>
+    <div class="kv"><div class="k">Periapsis velocity</div><div class="v accent" id="tB_vp">— km/s</div></div>
+    <div class="kv"><div class="k">Apoapsis velocity</div><div class="v" id="tB_va">— km/s</div></div>
+    <div class="kv"><div class="k">Mass scooped per pass</div><div class="v" id="tB_per_pass">— g</div></div>
+    <div class="kv"><div class="k">Orbital period</div><div class="v" id="tB_period">— min</div></div>
+    <div class="kv"><div class="k">Total mass collected</div><div class="v accent" id="tB_total">— kg</div></div>
+    <div class="kv"><div class="k">Drag on bus per pass</div><div class="v" id="tB_drag">— N</div></div>
+    <div class="kv"><div class="k">Δv lost to drag</div><div class="v" id="tB_dv">— m/s/day</div></div>
+    <div class="kv"><div class="k">Hall thrust required</div><div class="v" id="tB_thrust">— mN</div></div>
+    <div class="kv"><div class="k">Thrust margin</div><div class="v" id="tB_margin">—</div></div>
+    <div class="kv"><div class="k">Bus thermal regime</div><div class="v" id="tB_thermal">—</div></div>
+    <div class="kv"><div class="k">Sample chemistry</div><div class="v" id="tB_chem">—</div></div>
+    <div class="kv"><div class="k">Peak g-load on bus</div><div class="v" id="tB_gload">—</div></div>
+
+    <div id="vB" class="verdict">
+      <strong>Elliptical verdict</strong>
+      <span id="vB_text">—</span>
+    </div>
+
+    <div class="sketch-wrap">
+      <h3>Elliptical orbit geometry <span class="meta" id="animB_meta">—</span></h3>
+      <canvas id="chartB" width="560" height="260"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="anim-ctrl">
+  <button id="anim_toggle">⏸ Pause</button>
+  <span>Animation speed</span>
+  <input type="range" id="anim_speed" min="0.25" max="4" step="0.25" value="1">
+  <span class="v" id="anim_speed_v">1.0×</span>
+  <span style="font-style:italic;color:var(--ink-2)">Time is compressed so each tether rotation and orbital revolution completes in seconds, not minutes.</span>
+</div>
+
+<div id="winner" class="winner-banner">
+  <strong>Architectural verdict</strong>
+  <span id="winner_text">Comparing architectures…</span>
+</div>
+
+<footer>
+A reader's instrument, not a mission design. Atmospheric density uses a piecewise-exponential approximation to the COSPAR VIRA profile. Tether dynamics are treated quasi-statically — Coriolis, libration, and tension oscillation are not modeled. Drag uses free-molecular hyperthermal coefficients at Cd ≈ 2.2 for the bus and Cd ≈ 1.6 for the scoop tip at low velocity. The chemistry classification reflects the dissociation regime at the encounter velocity: below 2 km/s, molecules survive intact; from 2 to 5 km/s, partial dissociation; above 5 km/s, substantial dissociation into C, O, CO. The lesson the interactive teaches is architectural, not numerical: the rotating tether buys chemically intact CO₂ and an order-of-magnitude lower drag tax at the cost of raw mass throughput and structural complexity. The elliptical drag-through buys raw mass and structural simplicity at the cost of hyperthermally dissociated samples. The choice depends on what your science deck needs from the gas — mass, or molecules. Built as a companion to <em>Rocket Lab's Venus (Atmospheric) Sample Return</em> — Lawrence Furnival, 2026.
+</footer>
+
+<script>
+// ============================================================
+// Constants and atmosphere
+// ============================================================
+const VENUS = {
+  mu: 3.2486e14,
+  R: 6051.8e3,
+  rho_ref: 1.6e-11,     // kg/m³ at 170 km
+  H_low: 5.5e3,
+  H_high: 8.0e3,
+};
+
+function density(h_km) {
+  const ref = 170;
+  if (h_km <= ref) return VENUS.rho_ref * Math.exp((ref - h_km) * 1e3 / VENUS.H_low);
+  return VENUS.rho_ref * Math.exp(-(h_km - ref) * 1e3 / VENUS.H_high);
+}
+
+function v_circ(h_km) {
+  return Math.sqrt(VENUS.mu / (VENUS.R + h_km * 1e3));
+}
+
+// Vis-viva: v at radius r on ellipse with semi-major axis a
+function v_vis_viva(r_m, a_m) {
+  return Math.sqrt(VENUS.mu * (2 / r_m - 1 / a_m));
+}
+
+// Cluster constants
+const T_PER_KW_CO2 = 60e-3;        // 60 mN/kW
+const ISP_CO2 = 1800;              // s
+const G0 = 9.81;
+const CD_BUS = 2.2;
+const CD_TIP = 1.6;
+const BUS_DRAG_AREA = 1.5;          // m² for the bus
+const COLLECTION_EFF_FAST = 0.30;
+const COLLECTION_EFF_SLOW = 0.55;
+const BUS_MASS = 150;               // kg dry
+const TETHER_BUS_ALT = 400;         // km — tether case bus sits high
+
+// ============================================================
+// Read inputs
+// ============================================================
+function readInputs() {
+  return {
+    T_months: parseFloat(document.getElementById('s_t').value),
+    A: parseFloat(document.getElementById('s_a').value),
+    H_scoop: parseFloat(document.getElementById('s_h').value),
+    P_kw: parseFloat(document.getElementById('s_p').value),
+    L_km: parseFloat(document.getElementById('s_l').value),
+    omega_rpm: parseFloat(document.getElementById('s_w').value),
+    H_apo: parseFloat(document.getElementById('s_apo').value),
+  };
+}
+
+// ============================================================
+// Architecture A: Rotating tether
+// ============================================================
+function computeTether(inp) {
+  const H_bus = TETHER_BUS_ALT;                  // bus stays high
+  const H_tip = inp.H_scoop;                      // tip at scooping altitude
+  const r_bus = VENUS.R + H_bus * 1e3;
+  const r_tip = VENUS.R + H_tip * 1e3;
+  const v_bus_orb = v_circ(H_bus);                // bus orbital velocity at high alt
+  const v_tip_orb_eq = v_circ(H_tip);             // velocity needed for circular orbit at tip
+
+  // Tether tangential velocity at tip (relative to bus)
+  const omega_rad = inp.omega_rpm * 2 * Math.PI / 60;
+  const v_tether = omega_rad * inp.L_km * 1e3;    // m/s
+
+  // Tip inertial velocity = bus orbital velocity minus retrograde tether tip velocity
+  // (assuming spin direction chosen to subtract from orbital motion)
+  const v_tip_inertial = Math.abs(v_bus_orb - v_tether);
+
+  // Velocity of tip THROUGH the local atmosphere:
+  // Local atmosphere co-rotates with planet (Venus rotation is slow, negligible at 7 km/s).
+  // So v_atm_rel ≈ v_tip_inertial for tether case.
+  const v_atm_rel = v_tip_inertial;
+
+  // Mass flow at tip during dip
+  const rho_tip = density(H_tip);
+  const eta = v_atm_rel < 2000 ? COLLECTION_EFF_SLOW : COLLECTION_EFF_FAST;
+  const mdot_inst = rho_tip * v_atm_rel * inp.A * eta;  // kg/s instantaneous
+
+  // Duty cycle: fraction of rotation tip is below scooping altitude.
+  // For a rotating tether dipping into a scale-height-thick layer, the tip is "in"
+  // for an arc length equal to roughly 2*sqrt(2*L*H_scale)/L of the circle (chord through layer).
+  // Approximate as a simple angular fraction based on scale height.
+  const H_scale = inp.H_scoop < 180 ? VENUS.H_low : VENUS.H_high;
+  // Dip arc angle: arccos((L - H_scale)/L) when L is the rotation radius and dip depth is one scale height
+  let dip_arc;
+  if (inp.omega_rpm < 0.02) {
+    // Static tether: tip is always at scoop altitude (or near it)
+    dip_arc = 2 * Math.PI;
+  } else {
+    // Rotation radius is the tether length. Dip depth = H_scale (scoop spends most of its useful collection within one scale height).
+    const dip_frac = Math.min(1, H_scale / (inp.L_km * 1e3));
+    dip_arc = 2 * Math.acos(1 - dip_frac);
+  }
+  const duty = inp.omega_rpm < 0.02 ? 1.0 : dip_arc / (2 * Math.PI);
+
+  // Rotation period (treat below 0.02 rpm as effectively static)
+  const rot_period_s = inp.omega_rpm > 0.02 ? 60 / inp.omega_rpm : Infinity;
+
+  // Total mass collected
+  const t_sec = inp.T_months * 30 * 86400;
+  const total_kg = mdot_inst * duty * t_sec;
+
+  // Mass per rotation
+  const per_rot_g = inp.omega_rpm > 0.02 ? mdot_inst * duty * rot_period_s * 1000 : 0;
+
+  // Drag on tip during dip
+  const D_tip = 0.5 * rho_tip * v_atm_rel * v_atm_rel * CD_TIP * inp.A;
+
+  // Δv lost per day: drag impulse on the (bus+tether) system during dip arcs.
+  // Effective drag force averaged over rotation = D_tip * duty.
+  const D_avg = D_tip * duty;
+  const system_mass = BUS_MASS + 0.7 * inp.L_km;   // tether mass ~0.7 kg/km (Dyneema)
+  const dv_per_day_ms = (D_avg / system_mass) * 86400;
+
+  // Hall thrust required to compensate
+  const T_required = D_avg;                         // N
+  const T_available = T_PER_KW_CO2 * inp.P_kw;
+  const margin_pct = ((T_available - T_required) / T_required) * 100;
+
+  // Thermal regime
+  const thermal = v_atm_rel < 1500 ? 'Benign (< 1.5 km/s)' :
+                  v_atm_rel < 3500 ? 'Moderate (1.5–3.5 km/s)' :
+                  v_atm_rel < 6000 ? 'Severe (3.5–6 km/s)' :
+                                     'Extreme (> 6 km/s)';
+
+  // Sample chemistry classification
+  const chem = v_atm_rel < 2000 ? 'Mostly intact (CO₂)' :
+               v_atm_rel < 5000 ? 'Partial dissociation' :
+                                  'Heavily dissociated';
+
+  // g-load at tip: ω² * r
+  const g_tip = (omega_rad * omega_rad * inp.L_km * 1e3) / G0;
+
+  return {
+    v_atm_rel, v_bus_orb, v_tether, v_tip_inertial, v_tip_orb_eq,
+    mdot_inst, duty, total_kg, per_rot_g, rot_period_s,
+    D_tip, D_avg, T_required, T_available, margin_pct,
+    dv_per_day_ms, thermal, chem, g_tip,
+    rho_tip, H_bus, H_tip
+  };
+}
+
+// ============================================================
+// Architecture B: Elliptical drag-through
+// ============================================================
+function computeElliptical(inp) {
+  const H_peri = inp.H_scoop;
+  const H_apo = Math.max(inp.H_apo, H_peri + 50);
+  const r_peri = VENUS.R + H_peri * 1e3;
+  const r_apo = VENUS.R + H_apo * 1e3;
+  const a = (r_peri + r_apo) / 2;
+  const e = (r_apo - r_peri) / (r_apo + r_peri);
+
+  const v_peri = v_vis_viva(r_peri, a);
+  const v_apo = v_vis_viva(r_apo, a);
+
+  const T_orbit_s = 2 * Math.PI * Math.sqrt(Math.pow(a, 3) / VENUS.mu);
+
+  // Atmosphere relative velocity at periapsis ≈ v_peri (Venus rotates slowly)
+  const v_atm_rel = v_peri;
+
+  const rho_peri = density(H_peri);
+  const eta = COLLECTION_EFF_FAST;   // always fast at orbital periapsis
+  const mdot_inst = rho_peri * v_atm_rel * inp.A * eta;
+
+  // Duty cycle: time spent below ~ (H_peri + H_scale) on each pass
+  // From Kepler's eqn, the fraction of orbital period within a small altitude band near periapsis
+  // is approximately (1/π) * sqrt(2*Δh/(a*e)) for Δh << a*e.
+  const H_scale = H_peri < 180 ? VENUS.H_low : VENUS.H_high;
+  const delta_h = H_scale;
+  const duty = Math.min(0.5, (1 / Math.PI) * Math.sqrt(2 * delta_h / (a * e * 1)));
+
+  const t_sec = inp.T_months * 30 * 86400;
+  const total_kg = mdot_inst * duty * t_sec;
+  const per_pass_g = mdot_inst * duty * T_orbit_s * 1000;
+
+  // Drag on whole bus at periapsis
+  const D_bus = 0.5 * rho_peri * v_peri * v_peri * CD_BUS * BUS_DRAG_AREA;
+  const D_avg = D_bus * duty;
+
+  const dv_per_day_ms = (D_avg / BUS_MASS) * 86400;
+  const T_required = D_avg;
+  const T_available = T_PER_KW_CO2 * inp.P_kw;
+  const margin_pct = ((T_available - T_required) / T_required) * 100;
+
+  const thermal = v_atm_rel < 6000 ? 'Severe (orbital velocity)' :
+                                     'Extreme (full Mach-25-equivalent)';
+  const chem = 'Heavily dissociated (hyperthermal)';
+
+  // g-load on bus during deepest periapsis (acceleration from drag)
+  const g_peak = D_bus / BUS_MASS / G0;
+
+  return {
+    v_peri, v_apo, v_atm_rel, e, a,
+    mdot_inst, duty, total_kg, per_pass_g, T_orbit_s,
+    D_bus, D_avg, T_required, T_available, margin_pct,
+    dv_per_day_ms, thermal, chem, g_peak,
+    rho_peri, H_peri, H_apo
+  };
+}
+
+// ============================================================
+// Verdicts
+// ============================================================
+function verdictTether(t, inp) {
+  if (inp.omega_rpm > 0.05 && inp.omega_rpm * inp.L_km * 1e3 * 2 * Math.PI / 60 > v_circ(TETHER_BUS_ALT)) {
+    return { cls: 'warn', text: 'Tether tip is moving faster than orbital velocity in the retrograde direction — the tip will swing backward through atmosphere. Geometrically valid but operationally exotic.' };
+  }
+  if (t.total_kg < 1) {
+    return { cls: 'bad', text: 'Sample mass below 1 kg. Either the rotation rate is wrong for this tether length, the scoop is too small, or the campaign is too short.' };
+  }
+  if (t.g_tip > 3) {
+    return { cls: 'warn', text: 'Tip g-load above 3 g — instruments at the tip must survive sustained acceleration. Acceptable for a passive scoop, problematic for delicate science.' };
+  }
+  if (t.margin_pct < -20) {
+    return { cls: 'bad', text: 'Hall thrust insufficient by more than 20%. The tether system loses energy faster than the cluster can replace it; the bus altitude decays.' };
+  }
+  if (t.margin_pct < 30) {
+    return { cls: 'warn', text: 'Thrust margin under 30%. Architecture closes but with little reserve for atmospheric variability.' };
+  }
+  if (t.v_atm_rel < 2000) {
+    return { cls: 'good', text: 'Tip velocity below 2 km/s: sample chemistry is preserved, scoop thermal load is benign, collection efficiency is high. This is the ideal regime.' };
+  }
+  return { cls: 'good', text: 'Architecture closes with margin. Tether performs as designed; scoop dips and recovers cleanly each rotation.' };
+}
+
+function verdictElliptical(b, inp) {
+  if (b.total_kg < 1) {
+    return { cls: 'bad', text: 'Sample mass below 1 kg. Periapsis too high or scoop too small. Lower the collection altitude or enlarge the scoop.' };
+  }
+  if (b.margin_pct < -20) {
+    return { cls: 'bad', text: 'Drag on the full bus exceeds installed Hall thrust by more than 20%. The orbit decays; the spacecraft is lost.' };
+  }
+  if (b.margin_pct < 0) {
+    return { cls: 'bad', text: 'Drag exceeds installed thrust — the orbit is decaying. Raise the apoapsis to reduce average drag, or increase cluster power.' };
+  }
+  if (b.g_peak > 0.1) {
+    return { cls: 'warn', text: 'Peak deceleration above 0.1 g during periapsis — bus must be structurally rated for sustained 0.1+ g loading; solar arrays may need stowing.' };
+  }
+  if (b.margin_pct < 50) {
+    return { cls: 'warn', text: 'Thrust margin under 50%. Architecture closes but the whole bus is loaded with drag every orbit; reserve is limited.' };
+  }
+  return { cls: 'good', text: 'Architecture closes. Bus survives periapsis passes; thrust compensates for cumulative drag loss; sample accumulates each orbit.' };
+}
+
+function compareWinner(t, b, inp) {
+  const tA_ok = t.total_kg >= 1 && t.margin_pct >= 0;
+  const tB_ok = b.total_kg >= 1 && b.margin_pct >= 0;
+
+  if (!tA_ok && !tB_ok) {
+    return 'Neither architecture closes at these inputs. Increase power, enlarge the scoop, or extend the campaign.';
+  }
+  if (tA_ok && !tB_ok) {
+    return 'Only the rotating tether closes at these inputs. The elliptical drag-through cannot survive the periapsis drag with this power budget — every orbit costs more Δv than the thrusters can replace.';
+  }
+  if (tB_ok && !tA_ok) {
+    return 'Only the elliptical drag-through closes at these inputs. The tether case underperforms here — likely because rotation rate or tether length is mistuned for this scoop altitude.';
+  }
+
+  // Both close — compare on three criteria
+  const sample_ratio = t.total_kg / b.total_kg;
+  const chem_advantage = t.v_atm_rel < 2500 && b.v_atm_rel > 4000;
+  const dv_advantage = b.dv_per_day_ms / Math.max(t.dv_per_day_ms, 0.001);
+
+  let lines = [];
+  lines.push(`Both architectures close. The rotating tether collects ${(sample_ratio).toFixed(1)}× the sample mass of the elliptical drag-through and loses ${dv_advantage.toFixed(1)}× less Δv per day to drag.`);
+  if (chem_advantage) {
+    lines.push('The tether collects chemically intact CO₂ (tip velocity < 2.5 km/s); the elliptical case collects heavily dissociated atmosphere at orbital velocity. For a science-grade sample, the tether is the only choice.');
+  } else if (t.v_atm_rel < 5000 && b.v_atm_rel > 5000) {
+    lines.push('Sample chemistry favors the tether: tip velocity is below the hyperthermal threshold, periapsis velocity is not.');
+  }
+  if (sample_ratio > 3) {
+    lines.push('The collection-rate advantage is large enough that the structural complexity of the tether is justified by sample yield alone.');
+  } else if (sample_ratio < 1.0 && chem_advantage) {
+    lines.push('The elliptical collects more raw mass, but the sample is hyperthermally dissociated — close to useless for atmospheric chemistry. The tether returns less mass of a scientifically usable sample. This is the true trade: kilograms of damaged gas vs grams of intact CO₂.');
+  } else if (sample_ratio < 1.5) {
+    lines.push('The collection-rate advantage is modest. The simpler elliptical architecture may be preferable for a first mission unless sample chemistry matters.');
+  }
+  return lines.join(' ');
+}
+
+// ============================================================
+// Animation
+// ============================================================
+// Each scene completes a rotation/orbit in a fixed wall-clock time so the
+// physics is visible. The relative *visual* speed difference between scenarios
+// is preserved by tying the per-rotation seconds to the actual rotation period,
+// then capping it so even a slow 20-minute rotation completes in ~6 visible seconds.
+
+const anim = {
+  running: true,
+  speed: 1.0,
+  last_t: 0,
+  tether_phase: 0,    // tether angle, radians, 0 = tip below bus
+  bus_phase: 0,       // bus position on its circular orbit
+  ell_M: 0,           // mean anomaly of elliptical orbit
+  puffs_A: [],        // {x, y, r, life, max_life}
+  puffs_B: [],
+  trail_B: [],        // {x, y, life}
+};
+
+function drawPlanet(ctx, cx, cy, r) {
+  // Soft gradient on Venus
+  const g = ctx.createRadialGradient(cx - r*0.3, cy - r*0.3, r*0.2, cx, cy, r);
+  g.addColorStop(0, '#c69a6e');
+  g.addColorStop(0.7, '#7a5a3f');
+  g.addColorStop(1, '#3a2a1c');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#9aa3b2';
+  ctx.font = '10px ui-monospace';
+  ctx.fillText('Venus', cx - 15, cy + 4);
+}
+
+function drawAtmosphereGlow(ctx, cx, cy, r_planet_px, r_atm_px) {
+  const g = ctx.createRadialGradient(cx, cy, r_planet_px, cx, cy, r_atm_px);
+  g.addColorStop(0, 'rgba(217,160,91,0.0)');
+  g.addColorStop(0.4, 'rgba(217,160,91,0.18)');
+  g.addColorStop(1, 'rgba(217,160,91,0.0)');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r_atm_px, 0, Math.PI * 2);
+  ctx.arc(cx, cy, r_planet_px, 0, Math.PI * 2, true);
+  ctx.fill();
+}
+
+function emitPuff(arr, x, y, color, intensity) {
+  arr.push({
+    x, y,
+    r: 1.5 + Math.random() * 2,
+    vx: (Math.random() - 0.5) * 0.6,
+    vy: (Math.random() - 0.5) * 0.6,
+    life: 1.0,
+    max_life: 0.8 + Math.random() * 0.6,
+    color,
+    intensity,
+  });
+}
+
+function updateAndDrawPuffs(ctx, arr, dt) {
+  for (let i = arr.length - 1; i >= 0; i--) {
+    const p = arr[i];
+    p.life -= dt / p.max_life;
+    if (p.life <= 0) { arr.splice(i, 1); continue; }
+    p.x += p.vx;
+    p.y += p.vy;
+    p.r *= 1.02;
+    const a = Math.max(0, p.life) * p.intensity;
+    ctx.fillStyle = p.color.replace('A', a.toFixed(3));
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawTetherChart(t, inp, dt) {
+  const c = document.getElementById('chartA');
+  const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // The tether panel uses a non-physical visual scale: the planet is drawn small
+  // relative to its real size so the tether (which is only ~1% of planet radius)
+  // can be seen at all. Bus altitude TETHER_BUS_ALT maps to a visible ring;
+  // scoop altitude maps just above the visible atmosphere edge.
+  const cx = W * 0.5, cy = H * 0.5;
+  const px_planet = 36;
+  const r_atm_px = px_planet + 18;                 // atmosphere band visible
+  // Visually scale the bus orbit and tether so that LONGER tethers reach further
+  // toward the atmosphere. Bus altitude is constant (400 km) so its physical
+  // distance is the same, but the visual reference scale must account for the
+  // tether length to make the difference visible.
+  // Use log scale on L: L=20 → short tether, L=2000 → nearly fills panel.
+  const max_outer_r = Math.min(W * 0.45, H * 0.46);
+  // Outer radius placed at bus orbit
+  const bus_r_px = max_outer_r;
+  // Tether visual length scales as log(L/20) / log(2000/20). Clamp 0.15..0.95.
+  const L_min = 20, L_max = 2000;
+  const log_frac = Math.log(Math.max(L_min, inp.L_km) / L_min) / Math.log(L_max / L_min);
+  const t_frac = Math.min(0.95, Math.max(0.15, log_frac));
+  const tether_visual_px = (bus_r_px - r_atm_px) * t_frac;
+
+  // Atmosphere glow
+  drawAtmosphereGlow(ctx, cx, cy, px_planet, r_atm_px);
+
+  // Planet
+  drawPlanet(ctx, cx, cy, px_planet);
+
+  // Atmosphere top stroke
+  ctx.strokeStyle = 'rgba(217,160,91,0.35)';
+  ctx.lineWidth = 0.7;
+  ctx.beginPath(); ctx.arc(cx, cy, r_atm_px, 0, Math.PI * 2); ctx.stroke();
+
+  // Bus orbital position — bus moves slowly around planet (just for visual interest)
+  const bus_x = cx + Math.sin(anim.bus_phase) * bus_r_px;
+  const bus_y = cy - Math.cos(anim.bus_phase) * bus_r_px;
+
+  // Bus orbit (dashed)
+  ctx.strokeStyle = 'rgba(110,168,199,0.35)';
+  ctx.setLineDash([2, 3]);
+  ctx.beginPath(); ctx.arc(cx, cy, bus_r_px, 0, Math.PI * 2); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Tether tip rotates around the bus, oriented in bus's local frame
+  const dx_in = (cx - bus_x);
+  const dy_in = (cy - bus_y);
+  const dist_to_planet = Math.sqrt(dx_in * dx_in + dy_in * dy_in);
+  const rad_x = dx_in / dist_to_planet;
+  const rad_y = dy_in / dist_to_planet;
+  const tan_x = -rad_y;
+  const tan_y = rad_x;
+
+  // phase 0 = tip pointing inward (toward planet, deepest dip)
+  const phaseT = anim.tether_phase;
+  const tip_x = bus_x + tether_visual_px * (Math.cos(phaseT) * rad_x + Math.sin(phaseT) * tan_x);
+  const tip_y = bus_y + tether_visual_px * (Math.cos(phaseT) * rad_y + Math.sin(phaseT) * tan_y);
+
+  // Faint outline of tether's swept circle
+  ctx.strokeStyle = 'rgba(181,143,196,0.18)';
+  ctx.setLineDash([1, 3]);
+  ctx.beginPath(); ctx.arc(bus_x, bus_y, tether_visual_px, 0, Math.PI * 2); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Tether line
+  ctx.strokeStyle = '#b58fc4';
+  ctx.lineWidth = 1.3;
+  ctx.beginPath();
+  ctx.moveTo(bus_x, bus_y);
+  ctx.lineTo(tip_x, tip_y);
+  ctx.stroke();
+
+  // Bus
+  ctx.fillStyle = '#d9a05b';
+  ctx.beginPath(); ctx.arc(bus_x, bus_y, 5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#b58fc4';
+  ctx.font = '10px ui-monospace';
+  // Label outside bus (away from planet)
+  const lbl_off_x = bus_x - rad_x * 14;
+  const lbl_off_y = bus_y - rad_y * 14;
+  ctx.fillText('bus 400 km', lbl_off_x - 18, lbl_off_y);
+
+  // Tip distance from planet center (for atmosphere detection)
+  const tip_from_planet = Math.sqrt((tip_x - cx) * (tip_x - cx) + (tip_y - cy) * (tip_y - cy));
+  const tip_in_atm = tip_from_planet < r_atm_px;
+
+  // Tip
+  ctx.fillStyle = tip_in_atm ? '#ff8c66' : '#d96b6b';
+  ctx.beginPath(); ctx.arc(tip_x, tip_y, 4, 0, Math.PI * 2); ctx.fill();
+  if (tip_in_atm) {
+    // Halo around the tip while scooping
+    const g = ctx.createRadialGradient(tip_x, tip_y, 1, tip_x, tip_y, 16);
+    g.addColorStop(0, 'rgba(255, 200, 130, 0.85)');
+    g.addColorStop(1, 'rgba(255, 200, 130, 0.0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(tip_x, tip_y, 16, 0, Math.PI * 2); ctx.fill();
+    // Emit puffs
+    const v_kms = t.v_atm_rel / 1000;
+    const puff_color = v_kms < 2 ? 'rgba(111, 191, 115, A)' :
+                       v_kms < 5 ? 'rgba(217, 176, 78, A)' :
+                                   'rgba(217, 107, 107, A)';
+    if (Math.random() < 0.7) emitPuff(anim.puffs_A, tip_x, tip_y, puff_color, 0.9);
+  }
+  ctx.fillStyle = '#d96b6b';
+  // Tip label placed outboard (away from bus)
+  const tip_dir_x = tip_x - bus_x;
+  const tip_dir_y = tip_y - bus_y;
+  const tip_dir_len = Math.sqrt(tip_dir_x*tip_dir_x + tip_dir_y*tip_dir_y) || 1;
+  const tlbl_x = tip_x + (tip_dir_x / tip_dir_len) * 18 - 18;
+  const tlbl_y = tip_y + (tip_dir_y / tip_dir_len) * 8 + 4;
+  ctx.fillText('scoop ' + inp.H_scoop + ' km', tlbl_x, tlbl_y);
+
+  // Draw puffs
+  updateAndDrawPuffs(ctx, anim.puffs_A, dt);
+
+  // Legend / hint at bottom of canvas
+  ctx.fillStyle = '#9aa3b2';
+  ctx.font = '10px ui-monospace';
+  const tip_kms = (t.v_atm_rel / 1000).toFixed(2);
+  ctx.fillText('tip through atmosphere: ' + tip_kms + ' km/s', 12, H - 12);
+  const chem_color = t.v_atm_rel < 2000 ? '#6fbf73' : t.v_atm_rel < 5000 ? '#d9b04e' : '#d96b6b';
+  ctx.fillStyle = chem_color;
+  ctx.fillText('● ' + t.chem, W - 180, H - 12);
+}
+
+function drawEllipticalChart(b, inp, dt) {
+  const c = document.getElementById('chartB');
+  const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Non-physical visual scale: planet is drawn small relative to true size so the
+  // orbit's eccentricity is visible. Periapsis altitude (~130-150 km) is much
+  // smaller than planet radius (6052 km), so we exaggerate altitude relative to
+  // planet radius.
+  // - Planet drawn at fixed radius px_planet.
+  // - Atmosphere band drawn proportional to actual altitude range / typical scoop altitude.
+  // - Apoapsis distance from planet scaled to fill the panel.
+
+  const px_planet = 30;
+  // Map: planet surface = px_planet. peri_alt (km) = px_planet + alt_visual_factor*alt
+  const alt_factor = 0.05;  // 1 km altitude = 0.05 px (so 700 km = 35 px above surface)
+  const r_peri_px = px_planet + inp.H_scoop * alt_factor;
+  const r_apo_px = px_planet + inp.H_apo * alt_factor;
+  const a_px = (r_peri_px + r_apo_px) / 2;
+  const c_px = a_px - r_peri_px;
+  const b_px = Math.sqrt(Math.max(0, a_px * a_px - c_px * c_px));
+
+  // Place planet center so periapsis is well left and apoapsis well right
+  const cy = H * 0.5;
+  const cx = W * 0.5 - c_px * 0.3;   // shift planet slightly left of center
+  const ellipse_cx = cx + c_px;
+
+  const r_apo_real = VENUS.R / 1e3 + inp.H_apo;
+  const r_peri_real = VENUS.R / 1e3 + inp.H_scoop;
+  const planet_r_visible = px_planet;
+
+  // Atmosphere visual band: from planet surface to ~ scoop altitude visual
+  const r_atm_px = px_planet + Math.max(8, inp.H_scoop * alt_factor * 0.85);
+  drawAtmosphereGlow(ctx, cx, cy, planet_r_visible, r_atm_px);
+
+  // Planet
+  drawPlanet(ctx, cx, cy, planet_r_visible);
+
+  ctx.strokeStyle = 'rgba(217,160,91,0.35)';
+  ctx.lineWidth = 0.7;
+  ctx.beginPath(); ctx.arc(cx, cy, r_atm_px, 0, Math.PI * 2); ctx.stroke();
+
+  // Orbit ellipse
+  ctx.strokeStyle = 'rgba(110,168,199,0.55)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.ellipse(ellipse_cx, cy, a_px, b_px, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Solve Kepler: M -> E -> true anomaly
+  const M = anim.ell_M;
+  // Use the visual ellipse eccentricity (driven by visual peri/apo, which
+  // exaggerate altitude). The orbital motion uses Kepler's law on this visual
+  // ellipse, which preserves the right relative speeds at peri/apo qualitatively.
+  const e = (r_apo_px - r_peri_px) / (r_apo_px + r_peri_px);
+  let E = M;
+  for (let i = 0; i < 5; i++) E = E - (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
+  const nu = 2 * Math.atan2(Math.sqrt(1 + e) * Math.sin(E / 2), Math.sqrt(1 - e) * Math.cos(E / 2));
+  const r = a_px * (1 - e * Math.cos(E));
+  // Periapsis is on the LEFT of planet, so true anomaly 0 maps to angle pi from +x
+  const px_pos = cx - r * Math.cos(nu);
+  const py_pos = cy - r * Math.sin(nu);
+
+  // Trail
+  anim.trail_B.push({ x: px_pos, y: py_pos, life: 1.0 });
+  if (anim.trail_B.length > 60) anim.trail_B.shift();
+  for (let i = 0; i < anim.trail_B.length; i++) {
+    const tr = anim.trail_B[i];
+    tr.life -= dt * 0.4;
+    if (tr.life <= 0) continue;
+    ctx.fillStyle = `rgba(217, 160, 91, ${tr.life * 0.7})`;
+    ctx.beginPath();
+    ctx.arc(tr.x, tr.y, 1.6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // In atmosphere?
+  const bus_from_planet = Math.sqrt((px_pos - cx) * (px_pos - cx) + (py_pos - cy) * (py_pos - cy));
+  const bus_in_atm = bus_from_planet < r_atm_px;
+
+  if (bus_in_atm) {
+    // Halo
+    const g = ctx.createRadialGradient(px_pos, py_pos, 1, px_pos, py_pos, 18);
+    g.addColorStop(0, 'rgba(255, 130, 90, 0.7)');
+    g.addColorStop(1, 'rgba(255, 130, 90, 0.0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(px_pos, py_pos, 18, 0, Math.PI * 2); ctx.fill();
+    // Drag puffs always red because elliptical is always hyperthermal
+    if (Math.random() < 0.7) emitPuff(anim.puffs_B, px_pos, py_pos, 'rgba(217, 107, 107, A)', 1.0);
+    if (Math.random() < 0.3) emitPuff(anim.puffs_B, px_pos, py_pos, 'rgba(255, 200, 130, A)', 0.7);
+  }
+
+  // Bus
+  ctx.fillStyle = bus_in_atm ? '#ff8c66' : '#6ea8c7';
+  ctx.beginPath(); ctx.arc(px_pos, py_pos, 4.5, 0, Math.PI * 2); ctx.fill();
+
+  // Puffs
+  updateAndDrawPuffs(ctx, anim.puffs_B, dt);
+
+  // Periapsis / apoapsis markers
+  const peri_x = cx - r_peri_px;
+  const apo_x = cx + r_apo_px;
+  ctx.fillStyle = '#d96b6b';
+  ctx.beginPath(); ctx.arc(peri_x, cy, 2, 0, Math.PI * 2); ctx.fill();
+  ctx.font = '9px ui-monospace';
+  ctx.fillText('peri ' + inp.H_scoop + ' km', peri_x - 30, cy - 8);
+  ctx.fillStyle = '#6ea8c7';
+  ctx.beginPath(); ctx.arc(apo_x, cy, 2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillText('apo ' + inp.H_apo + ' km', apo_x + 5, cy + 3);
+
+  // Velocity / chemistry legend
+  ctx.fillStyle = '#9aa3b2';
+  ctx.font = '10px ui-monospace';
+  const v_kms = (b.v_peri / 1000).toFixed(2);
+  ctx.fillText('periapsis velocity: ' + v_kms + ' km/s', 12, H - 12);
+  ctx.fillStyle = '#d96b6b';
+  ctx.fillText('● ' + b.chem, W - 230, H - 12);
+}
+
+// Cached compute outputs for the animation loop
+let _last_t = null, _last_b = null, _last_inp = null;
+
+function animationLoop(ts) {
+  if (!anim.last_t) anim.last_t = ts;
+  const dt_real = Math.min(0.1, (ts - anim.last_t) / 1000);
+  anim.last_t = ts;
+  if (anim.running && _last_inp && _last_t && _last_b) {
+    const dt = dt_real * anim.speed;
+
+    // Tether: visible rotation period scales with actual rotation period, capped.
+    // Real: 30 s to 1200 s. Map to visible 2 s to 7 s.
+    const rot_real_s = _last_t.rot_period_s;
+    let rot_visible_s;
+    if (!isFinite(rot_real_s)) rot_visible_s = 30;   // static — don't rotate
+    else rot_visible_s = 2 + Math.min(5, Math.log10(Math.max(rot_real_s, 30) / 30) * 2.5);
+    const omega_visible = (2 * Math.PI) / rot_visible_s;
+    anim.tether_phase += omega_visible * dt;
+    if (anim.tether_phase > Math.PI * 2) anim.tether_phase -= Math.PI * 2;
+
+    // Bus on its background orbit — very slow (just visual)
+    anim.bus_phase += dt * 0.04;
+    if (anim.bus_phase > Math.PI * 2) anim.bus_phase -= Math.PI * 2;
+
+    // Elliptical: orbital period 80-180 min real → 6-8 visible seconds
+    const T_orbit_s = _last_b.T_orbit_s;
+    const ell_visible_s = 5 + Math.min(4, (T_orbit_s - 80*60) / (60*60));
+    anim.ell_M += (2 * Math.PI / ell_visible_s) * dt;
+    if (anim.ell_M > Math.PI * 2) anim.ell_M -= Math.PI * 2;
+
+    drawTetherChart(_last_t, _last_inp, dt);
+    drawEllipticalChart(_last_b, _last_inp, dt);
+
+    // Meta labels
+    const animA = document.getElementById('animA_meta');
+    if (animA) {
+      if (!isFinite(rot_real_s)) animA.textContent = 'static tether (no rotation)';
+      else animA.textContent = 'one rotation = ' + (rot_real_s < 60 ? rot_real_s.toFixed(0) + ' s' : (rot_real_s / 60).toFixed(1) + ' min') + ' real / ' + rot_visible_s.toFixed(1) + ' s shown';
+    }
+    const animB = document.getElementById('animB_meta');
+    if (animB) animB.textContent = 'one orbit = ' + (T_orbit_s / 60).toFixed(0) + ' min real / ' + ell_visible_s.toFixed(1) + ' s shown';
+  }
+  requestAnimationFrame(animationLoop);
+}
+requestAnimationFrame(animationLoop);
+
+// ============================================================
+// Render
+// ============================================================
+function fmt_kg(kg) {
+  if (kg < 0.001) return (kg * 1e6).toFixed(1) + ' mg';
+  if (kg < 1) return (kg * 1000).toFixed(1) + ' g';
+  return kg.toFixed(2) + ' kg';
+}
+function fmt_g(g) {
+  if (g < 0.001) return (g * 1000).toFixed(1) + ' mg';
+  return g.toFixed(2) + ' g';
+}
+function fmt_pct(p) {
+  if (!isFinite(p)) return '—';
+  return (p >= 0 ? '+' : '') + p.toFixed(0) + '%';
+}
+
+function render() {
+  const inp = readInputs();
+
+  document.getElementById('v_t').textContent = inp.T_months;
+  document.getElementById('v_a').textContent = inp.A.toFixed(2);
+  document.getElementById('v_h').textContent = inp.H_scoop;
+  document.getElementById('v_p').textContent = inp.P_kw.toFixed(1);
+  document.getElementById('v_l').textContent = inp.L_km;
+  document.getElementById('v_w').textContent = inp.omega_rpm.toFixed(2);
+  // Show ideal rpm for 1.5 km/s tip velocity (intact CO₂ chemistry, scoopable mass flux)
+  const v_bus = v_circ(TETHER_BUS_ALT);
+  const v_tip_target = 1500;
+  const omega_ideal_rad = (v_bus - v_tip_target) / (inp.L_km * 1e3);
+  const rpm_ideal = Math.max(0, omega_ideal_rad * 60 / (2 * Math.PI));
+  const rpm_el = document.getElementById('v_rpm_ideal');
+  if (rpm_el) rpm_el.textContent = `For 1.5 km/s tip at L = ${inp.L_km} km: ~${rpm_ideal.toFixed(2)} rpm.`;
+  document.getElementById('v_apo').textContent = inp.H_apo;
+
+  const t = computeTether(inp);
+  const b = computeElliptical(inp);
+
+  // Tether outputs
+  document.getElementById('tA_vtip').textContent = (t.v_atm_rel / 1000).toFixed(2) + ' km/s';
+  document.getElementById('tA_vratio').textContent = (t.v_atm_rel / t.v_tip_orb_eq * 100).toFixed(0) + '% of v_orb';
+  document.getElementById('tA_per_rot').textContent = fmt_g(t.per_rot_g);
+  document.getElementById('tA_period').textContent = isFinite(t.rot_period_s) ? t.rot_period_s.toFixed(1) + ' s' : 'static';
+  document.getElementById('tA_total').textContent = fmt_kg(t.total_kg);
+  document.getElementById('tA_drag').textContent = t.D_tip.toFixed(3) + ' N';
+  document.getElementById('tA_dv').textContent = t.dv_per_day_ms.toFixed(2);
+  document.getElementById('tA_thrust').textContent = (t.T_required * 1000).toFixed(1) + ' / ' + (t.T_available * 1000).toFixed(0) + ' mN';
+  const tA_margin_el = document.getElementById('tA_margin');
+  tA_margin_el.textContent = fmt_pct(t.margin_pct);
+  tA_margin_el.className = 'v ' + (t.margin_pct < 0 ? 'bad' : t.margin_pct < 30 ? 'accent' : 'good');
+  document.getElementById('tA_thermal').textContent = t.thermal;
+  document.getElementById('tA_chem').textContent = t.chem;
+  document.getElementById('tA_gload').textContent = t.g_tip.toFixed(2) + ' g';
+
+  // Elliptical outputs
+  document.getElementById('tB_vp').textContent = (b.v_peri / 1000).toFixed(2) + ' km/s';
+  document.getElementById('tB_va').textContent = (b.v_apo / 1000).toFixed(2) + ' km/s';
+  document.getElementById('tB_per_pass').textContent = fmt_g(b.per_pass_g);
+  document.getElementById('tB_period').textContent = (b.T_orbit_s / 60).toFixed(1) + ' min';
+  document.getElementById('tB_total').textContent = fmt_kg(b.total_kg);
+  document.getElementById('tB_drag').textContent = b.D_bus.toFixed(3) + ' N';
+  document.getElementById('tB_dv').textContent = b.dv_per_day_ms.toFixed(2);
+  document.getElementById('tB_thrust').textContent = (b.T_required * 1000).toFixed(1) + ' / ' + (b.T_available * 1000).toFixed(0) + ' mN';
+  const tB_margin_el = document.getElementById('tB_margin');
+  tB_margin_el.textContent = fmt_pct(b.margin_pct);
+  tB_margin_el.className = 'v ' + (b.margin_pct < 0 ? 'bad' : b.margin_pct < 50 ? 'accent' : 'good');
+  document.getElementById('tB_thermal').textContent = b.thermal;
+  document.getElementById('tB_chem').textContent = b.chem;
+  document.getElementById('tB_gload').textContent = b.g_peak.toFixed(3) + ' g';
+
+  // Verdicts
+  const vA = verdictTether(t, inp);
+  const vAbox = document.getElementById('vA');
+  vAbox.className = 'verdict ' + vA.cls;
+  document.getElementById('vA_text').textContent = vA.text;
+
+  const vB = verdictElliptical(b, inp);
+  const vBbox = document.getElementById('vB');
+  vBbox.className = 'verdict ' + vB.cls;
+  document.getElementById('vB_text').textContent = vB.text;
+
+  document.getElementById('winner_text').textContent = compareWinner(t, b, inp);
+
+  // Stash latest compute outputs for the animation loop
+  _last_t = t; _last_b = b; _last_inp = inp;
+  // Draw an immediate frame so changes are visible even when paused
+  drawTetherChart(t, inp, 0);
+  drawEllipticalChart(b, inp, 0);
+}
+
+// Scenarios
+// Scenarios trace the three useful regimes of tip velocity.
+// Tip inertial velocity = v_bus − ωL. v_bus ≈ 7.1 km/s at 400 km altitude.
+// (1) baseline: 1.5 km/s tip (intact CO2 chemistry, low g)
+// (2) gentle: 0.8 km/s tip (very long tether, near-static)
+// (3) aggressive: short tether, fast tip (worst chemistry, simple structure)
+// (4) long_tether: HASTOL-class, low g at tip
+const scenarios = {
+  baseline:    { t: 18, a: 0.30, h: 140, p: 6.0, l: 200,  w: 0.27, apo: 600 },
+  gentle:      { t: 24, a: 0.30, h: 150, p: 4.0, l: 400,  w: 0.15, apo: 800 },
+  aggressive:  { t: 12, a: 0.60, h: 125, p: 8.0, l: 60,   w: 0.95, apo: 400 },
+  long_tether: { t: 18, a: 0.30, h: 130, p: 6.0, l: 1000, w: 0.054, apo: 700 },
+};
+document.querySelectorAll('.scenarios button').forEach(b => {
+  b.addEventListener('click', () => {
+    const cfg = scenarios[b.dataset.scn];
+    document.getElementById('s_t').value = cfg.t;
+    document.getElementById('s_a').value = cfg.a;
+    document.getElementById('s_h').value = cfg.h;
+    document.getElementById('s_p').value = cfg.p;
+    document.getElementById('s_l').value = cfg.l;
+    document.getElementById('s_w').value = cfg.w;
+    document.getElementById('s_apo').value = cfg.apo;
+    render();
+  });
+});
+
+['s_t','s_a','s_h','s_p','s_l','s_w','s_apo'].forEach(id => {
+  document.getElementById(id).addEventListener('input', render);
+});
+
+// Animation controls
+document.getElementById('anim_toggle').addEventListener('click', () => {
+  anim.running = !anim.running;
+  document.getElementById('anim_toggle').textContent = anim.running ? '⏸ Pause' : '▶ Play';
+});
+document.getElementById('anim_speed').addEventListener('input', e => {
+  anim.speed = parseFloat(e.target.value);
+  document.getElementById('anim_speed_v').textContent = anim.speed.toFixed(2).replace(/\.?0+$/, '') + '×';
+});
+
+render();
+</script>
+</body>
+</html>
